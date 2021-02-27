@@ -1,4 +1,4 @@
-import { createWriteStream, ReadStream, unlink } from 'fs';
+import { createWriteStream, ReadStream, unlink, stat } from 'fs';
 import JSZip from 'jszip';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -9,9 +9,10 @@ interface DBRunner {
 }
 
 interface dbFileInfo {
-  dbFileNameWithoutExtension: string;
-  dbFileName: string;
-  dbFilePath: string;
+  fileNameWithoutExtension: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
 }
 
 export class PosgreSQLRunner implements DBRunner {
@@ -48,11 +49,12 @@ export class PosgreSQLRunner implements DBRunner {
           }
         })
         .pipe(writableDBFileStream)
-        .on('finish', () => {
+        .on('finish', async () => {
           resolve({
-            dbFileNameWithoutExtension,
-            dbFileName,
-            dbFilePath,
+            fileNameWithoutExtension: dbFileNameWithoutExtension,
+            fileName: dbFileName,
+            filePath: dbFilePath,
+            fileSize: await getFileSize(dbFilePath),
           });
         })
         .on('error', (err) => {
@@ -63,34 +65,42 @@ export class PosgreSQLRunner implements DBRunner {
 }
 
 interface zipFileInfo {
-  zipFileName: string;
-  zipFilePath: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
 }
 
 interface DBZipperExecuteOptions {
   dbFileName: string;
   dbFileNameWithoutExtension: string;
-  DBFileStream: ReadStream;
+  dbFileStream: ReadStream;
 }
 
 export class DBZipper {
   constructor(private zip: JSZip) {}
 
   execute(options: DBZipperExecuteOptions): Promise<zipFileInfo> {
-    const { dbFileName, dbFileNameWithoutExtension, DBFileStream } = options;
+    const { dbFileName, dbFileNameWithoutExtension, dbFileStream } = options;
     const zipFileName = `${dbFileNameWithoutExtension}.zip`;
     const zipFilePath = path.join(__dirname, `../storage/${zipFileName}`);
     const writableZipFileStream = createWriteStream(zipFilePath);
 
     return new Promise((resolve, reject) => {
-      this.zip.file(dbFileName, DBFileStream);
+      this.zip.file(dbFileName, dbFileStream);
       this.zip
-        .generateNodeStream({ streamFiles: true })
+        .generateNodeStream({
+          streamFiles: true,
+          compression: 'DEFLATE',
+          compressionOptions: {
+            level: config.app.compressionLevel,
+          },
+        })
         .pipe(writableZipFileStream)
-        .on('finish', () => {
+        .on('finish', async () => {
           resolve({
-            zipFileName,
-            zipFilePath,
+            fileName: zipFileName,
+            filePath: zipFilePath,
+            fileSize: await getFileSize(zipFilePath),
           });
         })
         .on('error', (err) => {
@@ -101,9 +111,9 @@ export class DBZipper {
 }
 
 export class DBFileRemover {
-  execute(dbFilePath: string): Promise<void> {
+  execute(filePath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      unlink(dbFilePath, (err) => {
+      unlink(filePath, (err) => {
         if (err) {
           reject(err);
         }
@@ -112,4 +122,16 @@ export class DBFileRemover {
       });
     });
   }
+}
+
+export function getFileSize(filePath: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    stat(filePath, (err, stats) => {
+      if (err) {
+        reject(err);
+      }
+
+      resolve(stats.size);
+    });
+  });
 }

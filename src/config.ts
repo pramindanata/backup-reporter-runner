@@ -1,6 +1,9 @@
 const { env } = process;
 
 export const config = {
+  app: {
+    compressionLevel: 5,
+  },
   bot: {
     url: env.BOT_URL || 'http://localhost',
   },

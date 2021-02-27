@@ -24,19 +24,18 @@ async function execute() {
   console.log(`[x] Begin backup`);
 
   const dbFileInfo = await pgRunner.execute();
-  const { dbFileName, dbFileNameWithoutExtension, dbFilePath } = dbFileInfo;
 
-  console.log(`[x] Archiving ${dbFileName}`);
+  console.log(`[x] Archiving ${dbFileInfo.fileName}`);
 
-  const { zipFilePath } = await dbZipper.execute({
-    dbFileName,
-    dbFileNameWithoutExtension,
-    DBFileStream: createReadStream(dbFilePath),
+  const zipFileInfo = await dbZipper.execute({
+    dbFileName: dbFileInfo.fileName,
+    dbFileNameWithoutExtension: dbFileInfo.fileNameWithoutExtension,
+    dbFileStream: createReadStream(dbFileInfo.filePath),
   });
 
-  console.log(`[x] Removing ${dbFileName}`);
+  console.log(`[x] Removing ${dbFileInfo.fileName}`);
 
-  await dbFileRemover.execute(dbFilePath);
+  await dbFileRemover.execute(dbFileInfo.filePath);
 
-  console.log(`[x] Complete, see: ${zipFilePath}`);
+  console.log(`[x] Complete, see: ${zipFileInfo.filePath}`);
 }
