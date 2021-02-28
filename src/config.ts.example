@@ -1,0 +1,32 @@
+import path from 'path';
+import { Config } from '@/interface';
+import { DBType } from '@/constant';
+
+const { env } = process;
+
+export const config: Config = {
+  app: {
+    compressionLevel: 5,
+    storagePath: path.join(__dirname, '../storage'),
+  },
+  bot: {
+    url: env.BOT_URL || 'http://localhost:4000',
+  },
+  projects: [
+    {
+      name: 'My Project',
+      databases: [
+        {
+          type: DBType.POSTGRESQL,
+          name: 'mydb',
+          host: 'localhost',
+          port: 5432,
+          user: 'postgres',
+          password: '',
+          backupSchedule: '0 0 * * *',
+          maxDaysFileStored: 7,
+        },
+      ],
+    },
+  ],
+};

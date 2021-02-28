@@ -107,3 +107,4 @@ typings/
 # Custom
 dist
 src/public
+src/config.ts
