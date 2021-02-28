@@ -55,7 +55,11 @@ export class Main {
     dbBackupDetail: DBBackupDetail,
   ): CronJob {
     const job = new CronJob(dbBackupDetail.backupSchedule, async () => {
-      await this.handleJob(projectName, dbBackupDetail);
+      try {
+        await this.handleJob(projectName, dbBackupDetail);
+      } catch (err) {
+        // Send fail notification
+      }
     });
 
     return job;

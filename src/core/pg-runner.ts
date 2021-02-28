@@ -3,7 +3,8 @@ import { createWriteStream } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { DBFileInfo, DBRunner, DBRunnerExecuteOptions } from '@/interface';
-import { getFileSize } from '@/core/util';
+import { getFileSize, getShortDBName } from '@/core/util';
+import { DBType } from '@/constant';
 
 @injectable()
 export class PosgreSQLRunner implements DBRunner {
@@ -44,9 +45,7 @@ export class PosgreSQLRunner implements DBRunner {
         })
         .on('end', () => {
           if (!haveChunk) {
-            throw new Error(
-              `[${dbBackupDetail.type}][${dbBackupDetail.name}] Empty stream`,
-            );
+            throw new DBRunnerEmptyReadStreamException();
           }
         })
         .pipe(writableDBFileStream)
@@ -61,5 +60,11 @@ export class PosgreSQLRunner implements DBRunner {
           reject(err);
         });
     });
+  }
+}
+
+export class DBRunnerEmptyReadStreamException extends Error {
+  constructor() {
+    super('Empty read stream. Please check its runner command.');
   }
 }
