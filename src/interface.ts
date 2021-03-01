@@ -37,7 +37,7 @@ export interface SuccessReport {
   projectName: string;
   startedAt: Date;
   finishedAt: Date;
-  dbFileDetail: DBFileDetail;
+  dbBackupDetail: DBBackupDetail;
   zipFileDetail: ZipFileDetail;
 }
 

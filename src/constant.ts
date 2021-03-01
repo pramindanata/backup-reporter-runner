@@ -1,5 +1,5 @@
 export enum DBType {
-  POSTGRESQL = 'PostreSQL',
+  POSTGRESQL = 'PostgreSQL',
   MYSQL = 'MySQL',
   MONGODB = 'MongoDB',
 }

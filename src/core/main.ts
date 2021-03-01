@@ -76,17 +76,23 @@ export class Main {
           projectName,
           startedAt,
           finishedAt,
-          ...backupResult,
+          dbBackupDetail,
+          zipFileDetail: backupResult.zipFileDetail,
         });
       } catch (error) {
+        if (!error.isAxiosError) {
+          await this.removeCreatedFilesAfterFailed(
+            baseFileName,
+            fullStoragePath,
+          );
+        }
+
         await this.publisher.sendFailedReport({
           projectName,
           error,
           dbBackupDetail,
           startedAt,
         });
-
-        await this.removeCreatedFilesAfterFailed(baseFileName, fullStoragePath);
       }
     });
 
