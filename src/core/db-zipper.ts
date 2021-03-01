@@ -1,4 +1,4 @@
-import { createWriteStream } from 'fs';
+import { createWriteStream, write } from 'fs';
 import { injectable } from 'tsyringe';
 import path from 'path';
 import { config } from '@/config';
@@ -19,7 +19,8 @@ export class DBZipper {
       const zip = new JSZip();
 
       zip.file(dbFileName, dbFileStream);
-      zip
+
+      const readZipStream = zip
         .generateNodeStream({
           streamFiles: true,
           compression: 'DEFLATE',
@@ -29,8 +30,9 @@ export class DBZipper {
         })
         .on('error', (err) => {
           reject(err);
-        })
-        .pipe(writableZipFileStream)
+        });
+
+      const writeZipStream = writableZipFileStream
         .on('finish', async () => {
           resolve({
             fileName: zipFileName,
@@ -41,6 +43,8 @@ export class DBZipper {
         .on('error', (err) => {
           reject(err);
         });
+
+      readZipStream.pipe(writeZipStream);
     });
   }
 }

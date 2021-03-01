@@ -34,7 +34,7 @@ export class PosgreSQLRunner implements DBRunner {
     return new Promise((resolve, reject) => {
       let haveChunk = false;
 
-      dbDumpProccess.stdout
+      const readDumpStream = dbDumpProccess.stdout
         .on('data', () => {
           if (haveChunk) {
             return;
@@ -49,8 +49,9 @@ export class PosgreSQLRunner implements DBRunner {
         })
         .on('error', (err) => {
           reject(err);
-        })
-        .pipe(writableDBFileStream)
+        });
+
+      const writeDBStream = writableDBFileStream
         .on('finish', async () => {
           resolve({
             fileName: dbFileName,
@@ -61,6 +62,8 @@ export class PosgreSQLRunner implements DBRunner {
         .on('error', (err) => {
           reject(err);
         });
+
+      readDumpStream.pipe(writeDBStream);
     });
   }
 }
