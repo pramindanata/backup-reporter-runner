@@ -1,8 +1,11 @@
 import { stat } from 'fs';
 import path from 'path';
 import { format } from 'date-fns';
+import os from 'os';
+import publicIP from 'public-ip';
 import { config } from '@/config';
 import { DBType } from '@/constant';
+import { ServerDetail } from '@/interface';
 
 export function getFileSize(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -45,4 +48,14 @@ export function getShortDBName(dbType: DBType): string {
   }
 
   return 'pg';
+}
+
+export async function getServerDetail(): Promise<ServerDetail> {
+  const computerName = os.hostname();
+  const ip = await publicIP.v4();
+
+  return {
+    computerName,
+    ip,
+  };
 }

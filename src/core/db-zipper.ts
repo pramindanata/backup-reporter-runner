@@ -1,30 +1,34 @@
 import { createWriteStream } from 'fs';
 import { injectable } from 'tsyringe';
-import JSZip from 'jszip';
 import path from 'path';
 import { config } from '@/config';
-import { DBZipperExecuteOptions, ZipFileInfo } from '@/interface';
+import { DBZipperExecuteOptions, ZipFileDetail } from '@/interface';
 import { getFileSize } from '@/core/util';
+import JSZip from 'jszip';
 
 @injectable()
 export class DBZipper {
-  constructor(private zip: JSZip) {}
-
-  execute(options: DBZipperExecuteOptions): Promise<ZipFileInfo> {
+  execute(options: DBZipperExecuteOptions): Promise<ZipFileDetail> {
     const { dbFileName, dbFileStream, fullStoragePath, baseFileName } = options;
     const zipFileName = `${baseFileName}.zip`;
     const zipFilePath = path.join(fullStoragePath, zipFileName);
     const writableZipFileStream = createWriteStream(zipFilePath);
 
     return new Promise((resolve, reject) => {
-      this.zip.file(dbFileName, dbFileStream);
-      this.zip
+      // Must use fresh instance per zip
+      const zip = new JSZip();
+
+      zip.file(dbFileName, dbFileStream);
+      zip
         .generateNodeStream({
           streamFiles: true,
           compression: 'DEFLATE',
           compressionOptions: {
             level: config.app.compressionLevel,
           },
+        })
+        .on('error', (err) => {
+          reject(err);
         })
         .pipe(writableZipFileStream)
         .on('finish', async () => {

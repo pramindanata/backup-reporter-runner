@@ -2,13 +2,12 @@ import { injectable } from 'tsyringe';
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { DBFileInfo, DBRunner, DBRunnerExecuteOptions } from '@/interface';
-import { getFileSize, getShortDBName } from '@/core/util';
-import { DBType } from '@/constant';
+import { DBFileDetail, DBRunner, DBRunnerExecuteOptions } from '@/interface';
+import { getFileSize } from '@/core/util';
 
 @injectable()
 export class PosgreSQLRunner implements DBRunner {
-  execute(options: DBRunnerExecuteOptions): Promise<DBFileInfo> {
+  execute(options: DBRunnerExecuteOptions): Promise<DBFileDetail> {
     const { baseFileName, dbBackupDetail, fullStoragePath } = options;
     const dbFileName = `${baseFileName}.sql`;
     const dbFilePath = path.join(fullStoragePath, dbFileName);
@@ -45,8 +44,11 @@ export class PosgreSQLRunner implements DBRunner {
         })
         .on('end', () => {
           if (!haveChunk) {
-            throw new DBRunnerEmptyReadStreamException();
+            reject(new DBRunnerEmptyReadStreamException());
           }
+        })
+        .on('error', (err) => {
+          reject(err);
         })
         .pipe(writableDBFileStream)
         .on('finish', async () => {
@@ -65,6 +67,6 @@ export class PosgreSQLRunner implements DBRunner {
 
 export class DBRunnerEmptyReadStreamException extends Error {
   constructor() {
-    super('Empty read stream. Please check its runner command.');
+    super('Empty read stream. No chunks returned from backup proccess.');
   }
 }

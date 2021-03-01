@@ -28,8 +28,28 @@ export interface DBBackupDetail {
   maxDaysFileStored: number;
 }
 
+export interface BackupResultDetail {
+  dbFileDetail: DBFileDetail;
+  zipFileDetail: ZipFileDetail;
+}
+
+export interface SuccessReport {
+  projectName: string;
+  startedAt: Date;
+  finishedAt: Date;
+  dbFileDetail: DBFileDetail;
+  zipFileDetail: ZipFileDetail;
+}
+
+export interface FailedReport {
+  projectName: string;
+  startedAt: Date;
+  dbBackupDetail: DBBackupDetail;
+  error: Error;
+}
+
 export interface DBRunner {
-  execute(options: DBRunnerExecuteOptions): Promise<DBFileInfo>;
+  execute(options: DBRunnerExecuteOptions): Promise<DBFileDetail>;
 }
 
 export interface DBRunnerExecuteOptions {
@@ -38,13 +58,13 @@ export interface DBRunnerExecuteOptions {
   baseFileName: string;
 }
 
-export interface DBFileInfo {
+export interface DBFileDetail {
   fileName: string;
   filePath: string;
   fileSize: number;
 }
 
-export interface ZipFileInfo {
+export interface ZipFileDetail {
   fileName: string;
   filePath: string;
   fileSize: number;
@@ -55,4 +75,9 @@ export interface DBZipperExecuteOptions {
   dbFileStream: ReadStream;
   fullStoragePath: string;
   baseFileName: string;
+}
+
+export interface ServerDetail {
+  computerName: string;
+  ip: string;
 }

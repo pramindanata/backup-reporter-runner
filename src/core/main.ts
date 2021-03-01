@@ -7,12 +7,13 @@ import { config } from '@/config';
 import { DBFileRemover } from '@/core/db-file-remover';
 import { DBZipper } from '@/core/db-zipper';
 import { PosgreSQLRunner } from '@/core/pg-runner';
+import { Publisher } from '@/core/publisher';
 import {
   generateBaseFileName,
   generateFullStoragePath,
   getShortDBName,
 } from '@/core/util';
-import { DBBackupDetail } from '@/interface';
+import { BackupResultDetail, DBBackupDetail } from '@/interface';
 import { DBType } from '@/constant';
 
 @injectable()
@@ -20,6 +21,7 @@ export class Main {
   constructor(
     private pgRunner: PosgreSQLRunner,
     private dbZipper: DBZipper,
+    private publisher: Publisher,
     private dbFileRemover: DBFileRemover,
   ) {}
 
@@ -55,20 +57,35 @@ export class Main {
     dbBackupDetail: DBBackupDetail,
   ): CronJob {
     const job = new CronJob(dbBackupDetail.backupSchedule, async () => {
+      const startedAt = new Date();
+
       try {
-        await this.handleJob(projectName, dbBackupDetail);
-      } catch (err) {
-        // Send fail notification
+        const backupResult = await this.backup(projectName, dbBackupDetail);
+        const finishedAt = new Date();
+
+        await this.publisher.sendSuccessReport({
+          projectName,
+          startedAt,
+          finishedAt,
+          ...backupResult,
+        });
+      } catch (error) {
+        await this.publisher.sendFailedReport({
+          projectName,
+          error,
+          dbBackupDetail,
+          startedAt,
+        });
       }
     });
 
     return job;
   }
 
-  private async handleJob(
+  private async backup(
     projectName: string,
     dbBackupDetail: DBBackupDetail,
-  ): Promise<void> {
+  ): Promise<BackupResultDetail> {
     const fullStoragePath = generateFullStoragePath(
       projectName,
       dbBackupDetail.name,
@@ -78,20 +95,25 @@ export class Main {
     await this.checkAndCreateStorageFolder(fullStoragePath);
 
     const baseFileName = generateBaseFileName();
-    const dbFileInfo = await this.pgRunner.execute({
+    const dbFileDetail = await this.pgRunner.execute({
       dbBackupDetail,
       fullStoragePath,
       baseFileName,
     });
 
-    await this.dbZipper.execute({
-      dbFileName: dbFileInfo.fileName,
-      dbFileStream: createReadStream(dbFileInfo.filePath),
+    const zipFileDetail = await this.dbZipper.execute({
+      dbFileName: dbFileDetail.fileName,
+      dbFileStream: createReadStream(dbFileDetail.filePath),
       fullStoragePath,
       baseFileName,
     });
 
-    await this.dbFileRemover.execute(dbFileInfo.filePath);
+    await this.dbFileRemover.execute(dbFileDetail.filePath);
+
+    return {
+      dbFileDetail,
+      zipFileDetail,
+    };
   }
 
   private async checkAndCreateStorageFolder(
