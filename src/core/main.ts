@@ -3,6 +3,7 @@ import { injectable } from 'tsyringe';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
+import EventEmitter from 'events';
 
 import { config } from '@/config';
 import { DBZipper } from '@/core/db-zipper';
@@ -21,13 +22,22 @@ import {
 } from '@/interface';
 import { DBType } from '@/constant';
 
+type JobErrorEvent = 'jobError';
+
+export interface Main {
+  on(event: JobErrorEvent, listener: (error: Error) => void): this;
+  emit(event: JobErrorEvent, payload: Error): boolean;
+}
+
 @injectable()
-export class Main {
+export class Main extends EventEmitter {
   constructor(
     private pgRunner: PosgreSQLRunner,
     private dbZipper: DBZipper,
     private publisher: Publisher,
-  ) {}
+  ) {
+    super();
+  }
 
   async execute(): Promise<void> {
     const { projects } = config;
@@ -86,6 +96,8 @@ export class Main {
 
         await this.publisher.sendSuccessReport(successReport);
       } catch (error) {
+        this.emit('jobError', error);
+
         if (!error.isAxiosError) {
           await this.removeCreatedFilesAfterFailed(
             baseFileName,
