@@ -1,10 +1,10 @@
 import { CronJob } from 'cron';
 import { injectable } from 'tsyringe';
 import { createReadStream } from 'fs';
-import { access, mkdir } from 'fs/promises';
+import path from 'path';
+import { access, mkdir, readdir, unlink } from 'fs/promises';
 
 import { config } from '@/config';
-import { DBFileRemover } from '@/core/db-file-remover';
 import { DBZipper } from '@/core/db-zipper';
 import { PosgreSQLRunner } from '@/core/pg-runner';
 import { Publisher } from '@/core/publisher';
@@ -22,7 +22,6 @@ export class Main {
     private pgRunner: PosgreSQLRunner,
     private dbZipper: DBZipper,
     private publisher: Publisher,
-    private dbFileRemover: DBFileRemover,
   ) {}
 
   async execute(): Promise<void> {
@@ -58,9 +57,19 @@ export class Main {
   ): CronJob {
     const job = new CronJob(dbBackupDetail.backupSchedule, async () => {
       const startedAt = new Date();
+      const baseFileName = generateBaseFileName();
+      const fullStoragePath = generateFullStoragePath(
+        projectName,
+        dbBackupDetail.name,
+        dbBackupDetail.type,
+      );
 
       try {
-        const backupResult = await this.backup(projectName, dbBackupDetail);
+        const backupResult = await this.backup(
+          baseFileName,
+          fullStoragePath,
+          dbBackupDetail,
+        );
         const finishedAt = new Date();
 
         await this.publisher.sendSuccessReport({
@@ -76,6 +85,8 @@ export class Main {
           dbBackupDetail,
           startedAt,
         });
+
+        await this.removeCreatedFilesAfterFailed(baseFileName, fullStoragePath);
       }
     });
 
@@ -83,18 +94,12 @@ export class Main {
   }
 
   private async backup(
-    projectName: string,
+    baseFileName: string,
+    fullStoragePath: string,
     dbBackupDetail: DBBackupDetail,
   ): Promise<BackupResultDetail> {
-    const fullStoragePath = generateFullStoragePath(
-      projectName,
-      dbBackupDetail.name,
-      dbBackupDetail.type,
-    );
-
     await this.checkAndCreateStorageFolder(fullStoragePath);
 
-    const baseFileName = generateBaseFileName();
     const dbFileDetail = await this.pgRunner.execute({
       dbBackupDetail,
       fullStoragePath,
@@ -108,7 +113,7 @@ export class Main {
       baseFileName,
     });
 
-    await this.dbFileRemover.execute(dbFileDetail.filePath);
+    await unlink(dbFileDetail.filePath);
 
     return {
       dbFileDetail,
@@ -126,5 +131,21 @@ export class Main {
         recursive: true,
       });
     }
+  }
+
+  private async removeCreatedFilesAfterFailed(
+    baseFileName: string,
+    fullStoragePath: string,
+  ): Promise<void> {
+    const files = await readdir(fullStoragePath);
+    const unusedFiles = files.filter((file) => file.match(`${baseFileName}*`));
+
+    await Promise.all(
+      unusedFiles.map(async (file) => {
+        const filePath = path.join(fullStoragePath, file);
+
+        await unlink(filePath);
+      }),
+    );
   }
 }
