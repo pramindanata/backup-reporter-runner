@@ -13,7 +13,12 @@ import {
   generateFullStoragePath,
   getShortDBName,
 } from '@/core/util';
-import { BackupResultDetail, DBBackupDetail } from '@/interface';
+import {
+  BackupResultDetail,
+  DBBackupDetail,
+  FailedReport,
+  SuccessReport,
+} from '@/interface';
 import { DBType } from '@/constant';
 
 @injectable()
@@ -71,14 +76,15 @@ export class Main {
           dbBackupDetail,
         );
         const finishedAt = new Date();
-
-        await this.publisher.sendSuccessReport({
+        const successReport: SuccessReport = {
           projectName,
           startedAt,
           finishedAt,
           dbBackupDetail,
           zipFileDetail: backupResult.zipFileDetail,
-        });
+        };
+
+        await this.publisher.sendSuccessReport(successReport);
       } catch (error) {
         if (!error.isAxiosError) {
           await this.removeCreatedFilesAfterFailed(
@@ -87,12 +93,14 @@ export class Main {
           );
         }
 
-        await this.publisher.sendFailedReport({
+        const failedReport: FailedReport = {
           projectName,
           error,
           dbBackupDetail,
           startedAt,
-        });
+        };
+
+        await this.publisher.sendFailedReport(failedReport);
       }
     });
 

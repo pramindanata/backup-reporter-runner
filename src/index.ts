@@ -13,5 +13,5 @@ try {
 
   main.execute();
 } catch (err) {
-  throw err;
+  console.error(err);
 }

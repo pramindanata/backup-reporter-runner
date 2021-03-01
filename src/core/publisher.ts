@@ -17,7 +17,6 @@ export class Publisher {
     } = report;
 
     await axios.post(`${config.bot.url}/report/success`, {
-      status: 'Success',
       computerName: serverDetail.computerName,
       projectName: projectName,
       ip: serverDetail.ip,
@@ -36,12 +35,16 @@ export class Publisher {
     const serverDetail = await getServerDetail();
     const { dbBackupDetail, error, projectName, startedAt } = report;
 
-    console.log({
-      serverDetail,
-      projectName,
-      message: error.message,
-      dbBackupDetail,
-      startedAt,
+    await axios.post(`${config.bot.url}/report/failed`, {
+      computerName: serverDetail.computerName,
+      projectName: projectName,
+      ip: serverDetail.ip,
+      startedAt: startedAt.toISOString(),
+      detail: {
+        name: dbBackupDetail.name,
+        type: dbBackupDetail.type,
+        message: error.message,
+      },
     });
   }
 }
