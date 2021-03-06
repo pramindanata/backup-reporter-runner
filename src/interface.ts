@@ -3,6 +3,7 @@ import { DBType } from '@/constant';
 export interface Config {
   app: {
     compressionLevel: number;
+    enableReport: boolean;
     storagePath: string;
   };
   bot: {

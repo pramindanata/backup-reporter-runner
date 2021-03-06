@@ -7,6 +7,7 @@ const { env } = process;
 export const config: Config = {
   app: {
     compressionLevel: 5,
+    enableReport: env.APP_ENABLE_REPORT === 'true' || false,
     storagePath: path.join(__dirname, '../storage'),
   },
   bot: {
