@@ -5,7 +5,7 @@ import { FakePublisher } from '@/core/fake/publisher';
 
 container.register(Publisher, {
   useFactory: (baseContainer) => {
-    if (config.app.enableReport) {
+    if (config.app.enableReportDelivery) {
       return baseContainer.resolve(Publisher);
     }
 
