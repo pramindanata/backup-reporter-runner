@@ -1,46 +1,17 @@
-import { CronJob } from 'cron';
 import { injectable } from 'tsyringe';
-import { createReadStream } from 'fs';
-import path from 'path';
-import { access, mkdir, readdir, unlink } from 'fs/promises';
-import EventEmitter from 'events';
-
 import { config } from '@/config';
-import { DBZipper } from '@/core/db-zipper';
-import { PosgreSQLRunner } from '@/core/pg-runner';
-import { Publisher } from '@/core/publisher';
-import {
-  generateBaseFileName,
-  generateFullStoragePath,
-  getShortDBName,
-} from '@/core/util';
-import {
-  BackupResultDetail,
-  DBBackupDetail,
-  FailedReport,
-  SuccessReport,
-} from '@/interface';
 import { DBType } from '@/constant';
-
-type JobErrorEvent = 'jobError';
-
-export interface Main {
-  on(event: JobErrorEvent, listener: (error: Error) => void): this;
-  emit(event: JobErrorEvent, payload: Error): boolean;
-}
+import { getServerDetail, getShortDBName } from '@/core/util';
+import { BackupRunnerJobFactory } from '@/core/backup-runner-job-factory';
+import { OnJobError } from '@/interface';
 
 @injectable()
-export class Main extends EventEmitter {
-  constructor(
-    private pgRunner: PosgreSQLRunner,
-    private dbZipper: DBZipper,
-    private publisher: Publisher,
-  ) {
-    super();
-  }
+export class Main {
+  constructor(private backupRunnerJobFactory: BackupRunnerJobFactory) {}
 
-  async execute(): Promise<void> {
+  async execute(onJobError: OnJobError): Promise<void> {
     const { projects } = config;
+    const serverDetail = await getServerDetail();
 
     projects.forEach((project) => {
       project.databases.forEach((dbBackupDetail) => {
@@ -57,121 +28,17 @@ export class Main extends EventEmitter {
           return;
         }
 
-        const job = this.createJob(project.name, dbBackupDetail);
+        const job = this.backupRunnerJobFactory.create(
+          serverDetail,
+          projectName,
+          dbBackupDetail,
+          onJobError,
+        );
 
         job.start();
 
         console.log(`${logLabel} Registered`);
       });
     });
-  }
-
-  private createJob(
-    projectName: string,
-    dbBackupDetail: DBBackupDetail,
-  ): CronJob {
-    const job = new CronJob(dbBackupDetail.backupSchedule, async () => {
-      const startedAt = new Date();
-      const baseFileName = generateBaseFileName();
-      const fullStoragePath = generateFullStoragePath(
-        projectName,
-        dbBackupDetail.name,
-        dbBackupDetail.type,
-      );
-
-      try {
-        const backupResult = await this.backup(
-          baseFileName,
-          fullStoragePath,
-          dbBackupDetail,
-        );
-        const finishedAt = new Date();
-        const successReport: SuccessReport = {
-          projectName,
-          startedAt,
-          finishedAt,
-          dbBackupDetail,
-          zipFileDetail: backupResult.zipFileDetail,
-        };
-
-        await this.publisher.sendSuccessReport(successReport);
-      } catch (error) {
-        this.emit('jobError', error);
-
-        if (!error.isAxiosError) {
-          await this.removeCreatedFilesAfterFailed(
-            baseFileName,
-            fullStoragePath,
-          );
-        }
-
-        const failedReport: FailedReport = {
-          projectName,
-          error,
-          dbBackupDetail,
-          startedAt,
-        };
-
-        await this.publisher.sendFailedReport(failedReport);
-      }
-    });
-
-    return job;
-  }
-
-  private async backup(
-    baseFileName: string,
-    fullStoragePath: string,
-    dbBackupDetail: DBBackupDetail,
-  ): Promise<BackupResultDetail> {
-    await this.checkAndCreateStorageFolder(fullStoragePath);
-
-    const dbFileDetail = await this.pgRunner.execute({
-      dbBackupDetail,
-      fullStoragePath,
-      baseFileName,
-    });
-
-    const zipFileDetail = await this.dbZipper.execute({
-      dbFileName: dbFileDetail.fileName,
-      dbFileStream: createReadStream(dbFileDetail.filePath),
-      fullStoragePath,
-      baseFileName,
-    });
-
-    await unlink(dbFileDetail.filePath);
-
-    return {
-      dbFileDetail,
-      zipFileDetail,
-    };
-  }
-
-  private async checkAndCreateStorageFolder(
-    fullStoragePath: string,
-  ): Promise<void> {
-    try {
-      await access(fullStoragePath);
-    } catch (err) {
-      await mkdir(fullStoragePath, {
-        recursive: true,
-      });
-    }
-  }
-
-  private async removeCreatedFilesAfterFailed(
-    baseFileName: string,
-    fullStoragePath: string,
-  ): Promise<void> {
-    const files = await readdir(fullStoragePath);
-    const unusedFiles = files.filter((file) => file.match(`${baseFileName}*`));
-
-    await Promise.all(
-      unusedFiles.map(async (file) => {
-        const filePath = path.join(fullStoragePath, file);
-
-        await unlink(filePath);
-      }),
-    );
   }
 }

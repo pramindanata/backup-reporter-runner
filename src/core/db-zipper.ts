@@ -1,4 +1,4 @@
-import { createWriteStream, write } from 'fs';
+import { createWriteStream, createReadStream } from 'fs';
 import { injectable } from 'tsyringe';
 import path from 'path';
 import { config } from '@/config';
@@ -8,8 +8,8 @@ import JSZip from 'jszip';
 
 @injectable()
 export class DBZipper {
-  execute(options: DBZipperExecuteOptions): Promise<ZipFileDetail> {
-    const { dbFileName, dbFileStream, fullStoragePath, baseFileName } = options;
+  zip(options: DBZipperExecuteOptions): Promise<ZipFileDetail> {
+    const { dbFileDetail, fullStoragePath, baseFileName } = options;
     const zipFileName = `${baseFileName}.zip`;
     const zipFilePath = path.join(fullStoragePath, zipFileName);
     const writableZipFileStream = createWriteStream(zipFilePath);
@@ -17,6 +17,9 @@ export class DBZipper {
     return new Promise((resolve, reject) => {
       // Must use fresh instance per zip
       const zip = new JSZip();
+      const dbFileName = dbFileDetail.fileName;
+      const dbFilePath = dbFileDetail.filePath;
+      const dbFileStream = createReadStream(dbFilePath);
 
       zip.file(dbFileName, dbFileStream);
 

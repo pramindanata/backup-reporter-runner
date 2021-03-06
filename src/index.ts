@@ -11,11 +11,7 @@ import { Main } from '@/core/main';
 try {
   const main = container.resolve(Main);
 
-  main.on('jobError', (err) => {
-    handleError(err);
-  });
-
-  main.execute();
+  main.execute(handleError);
 } catch (err) {
   handleError(err);
 }

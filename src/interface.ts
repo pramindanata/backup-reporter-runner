@@ -1,4 +1,3 @@
-import { ReadStream } from 'fs';
 import { DBType } from '@/constant';
 
 export interface Config {
@@ -11,6 +10,8 @@ export interface Config {
   };
   projects: ProjectDetail[];
 }
+
+export type OnJobError = (error: any) => void;
 
 export interface ProjectDetail {
   name: string;
@@ -34,25 +35,36 @@ export interface BackupResultDetail {
 }
 
 export interface SuccessReport {
+  computerName: string;
   projectName: string;
+  ip: string;
   startedAt: Date;
   finishedAt: Date;
-  dbBackupDetail: DBBackupDetail;
-  zipFileDetail: ZipFileDetail;
+  detail: {
+    name: string;
+    type: DBType;
+    filePath: string;
+    fileSize: number;
+  };
 }
 
 export interface FailedReport {
+  computerName: string;
   projectName: string;
+  ip: string;
   startedAt: Date;
-  dbBackupDetail: DBBackupDetail;
-  error: Error;
+  detail: {
+    name: string;
+    type: DBType;
+    message: string;
+  };
 }
 
-export interface DBRunner {
-  execute(options: DBRunnerExecuteOptions): Promise<DBFileDetail>;
+export interface DBDumpRunner {
+  dump(options: DBDumpRunnerExecuteOptions): Promise<DBFileDetail>;
 }
 
-export interface DBRunnerExecuteOptions {
+export interface DBDumpRunnerExecuteOptions {
   dbBackupDetail: DBBackupDetail;
   fullStoragePath: string;
   baseFileName: string;
@@ -71,8 +83,7 @@ export interface ZipFileDetail {
 }
 
 export interface DBZipperExecuteOptions {
-  dbFileName: string;
-  dbFileStream: ReadStream;
+  dbFileDetail: DBFileDetail;
   fullStoragePath: string;
   baseFileName: string;
 }

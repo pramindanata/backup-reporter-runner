@@ -2,12 +2,16 @@ import { injectable } from 'tsyringe';
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { DBFileDetail, DBRunner, DBRunnerExecuteOptions } from '@/interface';
+import {
+  DBFileDetail,
+  DBDumpRunner,
+  DBDumpRunnerExecuteOptions,
+} from '@/interface';
 import { getFileSize } from '@/core/util';
 
 @injectable()
-export class PosgreSQLRunner implements DBRunner {
-  execute(options: DBRunnerExecuteOptions): Promise<DBFileDetail> {
+export class PGDumpRunner implements DBDumpRunner {
+  dump(options: DBDumpRunnerExecuteOptions): Promise<DBFileDetail> {
     const { baseFileName, dbBackupDetail, fullStoragePath } = options;
     const dbFileName = `${baseFileName}.sql`;
     const dbFilePath = path.join(fullStoragePath, dbFileName);
