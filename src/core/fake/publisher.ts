@@ -1,7 +1,6 @@
-import { FailedReport, SuccessReport } from '@/interface';
-import { Publisher } from '../publisher';
+import { BasePublisher, FailedReport, SuccessReport } from '@/interface';
 
-export class FakePublisher implements Publisher {
+export class FakePublisher implements BasePublisher {
   async sendSuccessReport(report: SuccessReport): Promise<void> {
     console.log('Success Report', {
       ...report,

@@ -3,3 +3,7 @@ export enum DBType {
   MYSQL = 'MySQL',
   MONGODB = 'MongoDB',
 }
+
+export const Interface = {
+  BasePublisher: Symbol('BasePublisher'),
+};

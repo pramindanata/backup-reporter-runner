@@ -1,11 +1,11 @@
 import path from 'path';
 import { CronJob } from 'cron';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
-import { OnJobError, ServerDetail } from '@/interface';
+import { BasePublisher, OnJobError, ServerDetail } from '@/interface';
+import { Interface } from '@/constant';
 import { DBZipper } from './db-zipper';
 import { PGDumpRunner } from './pg-dump-runner';
-import { Publisher } from './publisher';
 import { generateBaseFileName } from './util';
 import { DBBackupDetail } from './db-backup-detail';
 
@@ -14,7 +14,8 @@ export class BackupRunnerJobFactory {
   constructor(
     private pgDumpRunner: PGDumpRunner,
     private dbZipper: DBZipper,
-    private publisher: Publisher,
+    @inject(Interface.BasePublisher)
+    private publisher: BasePublisher,
   ) {}
 
   create(

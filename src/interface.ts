@@ -93,3 +93,8 @@ export interface ServerDetail {
   computerName: string;
   ip: string;
 }
+
+export interface BasePublisher {
+  sendSuccessReport: (report: SuccessReport) => Promise<void>;
+  sendFailedReport: (report: FailedReport) => Promise<void>;
+}

@@ -1,6 +1,6 @@
+import { CronJob } from 'cron';
 import { container } from '@/container';
 import { OnJobError } from '@/interface';
-import { CronJob } from 'cron';
 import { BackupCleaner } from './backup-cleaner';
 import { DBBackupDetail } from './db-backup-detail';
 

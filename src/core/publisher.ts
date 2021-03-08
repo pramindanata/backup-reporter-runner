@@ -1,10 +1,10 @@
 import { injectable } from 'tsyringe';
 import { axios } from '@/lib/axios';
-import { FailedReport, SuccessReport } from '@/interface';
+import { BasePublisher, FailedReport, SuccessReport } from '@/interface';
 import { config } from '@/config';
 
 @injectable()
-export class Publisher {
+export class Publisher implements BasePublisher {
   async sendSuccessReport(report: SuccessReport): Promise<void> {
     await axios.post(`${config.bot.url}/report/success`, {
       ...report,
