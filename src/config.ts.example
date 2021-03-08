@@ -25,7 +25,7 @@ export const config: Config = {
           user: 'postgres',
           password: '',
           backupSchedule: '0 0 * * *',
-          maxDaysFileStored: 7,
+          daysUntilExpired: 7,
         },
       ],
     },

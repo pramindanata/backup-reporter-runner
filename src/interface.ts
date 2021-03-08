@@ -27,7 +27,7 @@ export interface DBBackupConfig {
   user: string;
   password: string;
   backupSchedule: string;
-  maxDaysFileStored: number;
+  daysUntilExpired: number;
 }
 
 export interface BackupResultDetail {

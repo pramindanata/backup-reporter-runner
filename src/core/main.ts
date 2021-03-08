@@ -4,12 +4,16 @@ import { getServerDetail } from '@/core/util';
 import { BackupRunnerJobFactory } from '@/core/backup-runner-job-factory';
 import { OnJobError, ProjectConfig, ServerDetail } from '@/interface';
 import { DBBackupDetail } from './db-backup-detail';
+import { BackupCleanerJobFactory } from './backup-cleaner-job-factory';
 
 @injectable()
 export class Main {
   private dbBackupDetails: DBBackupDetail[] = [];
 
-  constructor(private backupRunnerJobFactory: BackupRunnerJobFactory) {}
+  constructor(
+    private backupRunnerJobFactory: BackupRunnerJobFactory,
+    private backupCleanerJobFactory: BackupCleanerJobFactory,
+  ) {}
 
   async execute(onJobError: OnJobError): Promise<void> {
     const { projects } = config;
@@ -17,8 +21,9 @@ export class Main {
 
     this.registerDBBackupDetails(projects);
     this.initBackupRunnerJobs(serverDetail, onJobError);
+    this.initBackupCleanerJob(onJobError);
 
-    console.log('[x] Runner ready');
+    console.log('[~] All ready');
   }
 
   private registerDBBackupDetails(projects: ProjectConfig[]): void {
@@ -49,5 +54,14 @@ export class Main {
 
       job.start();
     });
+  }
+
+  private initBackupCleanerJob(onJobError: OnJobError): void {
+    const job = this.backupCleanerJobFactory.create(
+      this.dbBackupDetails,
+      onJobError,
+    );
+
+    job.start();
   }
 }
