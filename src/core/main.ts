@@ -1,44 +1,53 @@
 import { injectable } from 'tsyringe';
 import { config } from '@/config';
-import { DBType } from '@/constant';
-import { getServerDetail, getShortDBName } from '@/core/util';
+import { getServerDetail } from '@/core/util';
 import { BackupRunnerJobFactory } from '@/core/backup-runner-job-factory';
-import { OnJobError } from '@/interface';
+import { OnJobError, ProjectConfig, ServerDetail } from '@/interface';
+import { DBBackupDetail } from './db-backup-detail';
 
 @injectable()
 export class Main {
+  private dbBackupDetails: DBBackupDetail[] = [];
+
   constructor(private backupRunnerJobFactory: BackupRunnerJobFactory) {}
 
   async execute(onJobError: OnJobError): Promise<void> {
     const { projects } = config;
     const serverDetail = await getServerDetail();
 
+    this.registerDBBackupDetails(projects);
+    this.initBackupRunnerJobs(serverDetail, onJobError);
+
+    console.log('[x] Runner ready');
+  }
+
+  private registerDBBackupDetails(projects: ProjectConfig[]): void {
     projects.forEach((project) => {
-      project.databases.forEach((dbBackupDetail) => {
+      project.databases.forEach((dbBackupConfig) => {
         const projectName = project.name;
-        const dbCode = getShortDBName(dbBackupDetail.type);
-        const dbName = dbBackupDetail.name;
-        const logLabel = `[${projectName}][${dbCode}][${dbName}]`;
+        const dbBackupDetail = new DBBackupDetail(projectName, dbBackupConfig);
 
-        if (dbBackupDetail.type !== DBType.POSTGRESQL) {
-          console.warn(
-            `${logLabel} ${dbBackupDetail.type} currently is not supported !`,
-          );
+        this.dbBackupDetails.push(dbBackupDetail);
 
-          return;
-        }
-
-        const job = this.backupRunnerJobFactory.create(
-          serverDetail,
-          projectName,
-          dbBackupDetail,
-          onJobError,
+        console.log(
+          `[x] "${projectName}"."${dbBackupConfig.type}"."${dbBackupConfig.name}" registered`,
         );
-
-        job.start();
-
-        console.log(`${logLabel} Registered`);
       });
+    });
+  }
+
+  private initBackupRunnerJobs(
+    serverDetail: ServerDetail,
+    onJobError: OnJobError,
+  ): void {
+    this.dbBackupDetails.forEach((dbBackupDetail) => {
+      const job = this.backupRunnerJobFactory.create(
+        serverDetail,
+        dbBackupDetail,
+        onJobError,
+      );
+
+      job.start();
     });
   }
 }

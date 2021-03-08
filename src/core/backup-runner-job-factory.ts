@@ -2,11 +2,12 @@ import path from 'path';
 import { CronJob } from 'cron';
 import { injectable } from 'tsyringe';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
-import { DBBackupDetail, OnJobError, ServerDetail } from '@/interface';
+import { OnJobError, ServerDetail } from '@/interface';
 import { DBZipper } from './db-zipper';
 import { PGDumpRunner } from './pg-dump-runner';
 import { Publisher } from './publisher';
-import { generateBaseFileName, generateFullStoragePath } from './util';
+import { generateBaseFileName } from './util';
+import { DBBackupDetail } from './db-backup-detail';
 
 @injectable()
 export class BackupRunnerJobFactory {
@@ -18,12 +19,12 @@ export class BackupRunnerJobFactory {
 
   create(
     serverDetail: ServerDetail,
-    projectName: string,
     dbBackupDetail: DBBackupDetail,
     onJobError: OnJobError,
   ): CronJob {
-    const job = new CronJob(dbBackupDetail.backupSchedule, async () =>
-      this.handleJob(serverDetail, projectName, dbBackupDetail, onJobError),
+    const dbBackupConfig = dbBackupDetail.getConfig();
+    const job = new CronJob(dbBackupConfig.backupSchedule, async () =>
+      this.handleJob(serverDetail, dbBackupDetail, onJobError),
     );
 
     return job;
@@ -31,30 +32,26 @@ export class BackupRunnerJobFactory {
 
   private async handleJob(
     serverDetail: ServerDetail,
-    projectName: string,
     dbBackupDetail: DBBackupDetail,
     onJobError: OnJobError,
   ) {
     const startedAt = new Date();
     const baseFileName = generateBaseFileName();
-    const fullStoragePath = generateFullStoragePath(
-      projectName,
-      dbBackupDetail.name,
-      dbBackupDetail.type,
-    );
+    const dbBackupConfig = dbBackupDetail.getConfig();
+    const folderPath = dbBackupDetail.getBackupFolderPath();
 
     try {
-      await this.checkAndCreateStorageFolder(fullStoragePath);
+      await this.checkAndCreateBackupFolder(folderPath);
 
       const dbFileDetail = await this.pgDumpRunner.dump({
-        dbBackupDetail,
-        fullStoragePath,
+        dbBackupConfig: dbBackupDetail.getConfig(),
+        folderPath,
         baseFileName,
       });
 
       const zipFileDetail = await this.dbZipper.zip({
         dbFileDetail,
-        fullStoragePath,
+        folderPath,
         baseFileName,
       });
 
@@ -64,31 +61,31 @@ export class BackupRunnerJobFactory {
 
       await this.publisher.sendSuccessReport({
         computerName: serverDetail.computerName,
-        projectName: projectName,
+        projectName: dbBackupDetail.getProjectName(),
         ip: serverDetail.ip,
         startedAt: startedAt,
         finishedAt: finishedAt,
         detail: {
-          name: dbBackupDetail.name,
-          type: dbBackupDetail.type,
+          name: dbBackupConfig.name,
+          type: dbBackupConfig.type,
           filePath: zipFileDetail.filePath,
           fileSize: zipFileDetail.fileSize,
         },
       });
     } catch (error) {
       if (!error.isAxiosError) {
-        await this.removeCreatedFilesAfterFailed(baseFileName, fullStoragePath);
+        await this.removeCreatedFilesAfterFailed(baseFileName, folderPath);
       }
 
       await this.publisher.sendFailedReport({
         computerName: serverDetail.computerName,
-        projectName: projectName,
+        projectName: dbBackupDetail.getProjectName(),
         ip: serverDetail.ip,
         startedAt: startedAt,
         detail: {
           message: error.message,
-          name: dbBackupDetail.name,
-          type: dbBackupDetail.type,
+          name: dbBackupConfig.name,
+          type: dbBackupConfig.type,
         },
       });
 
@@ -96,13 +93,11 @@ export class BackupRunnerJobFactory {
     }
   }
 
-  private async checkAndCreateStorageFolder(
-    fullStoragePath: string,
-  ): Promise<void> {
+  private async checkAndCreateBackupFolder(folderPath: string): Promise<void> {
     try {
-      await access(fullStoragePath);
+      await access(folderPath);
     } catch (err) {
-      await mkdir(fullStoragePath, {
+      await mkdir(folderPath, {
         recursive: true,
       });
     }
@@ -110,14 +105,14 @@ export class BackupRunnerJobFactory {
 
   private async removeCreatedFilesAfterFailed(
     baseFileName: string,
-    fullStoragePath: string,
+    folderPath: string,
   ): Promise<void> {
-    const files = await readdir(fullStoragePath);
+    const files = await readdir(folderPath);
     const unusedFiles = files.filter((file) => file.match(`${baseFileName}*`));
 
     await Promise.all(
       unusedFiles.map(async (file) => {
-        const filePath = path.join(fullStoragePath, file);
+        const filePath = path.join(folderPath, file);
 
         await unlink(filePath);
       }),

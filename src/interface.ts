@@ -9,17 +9,17 @@ export interface Config {
   bot: {
     url: string;
   };
-  projects: ProjectDetail[];
+  projects: ProjectConfig[];
 }
 
 export type OnJobError = (error: any) => void;
 
-export interface ProjectDetail {
+export interface ProjectConfig {
   name: string;
-  databases: DBBackupDetail[];
+  databases: DBBackupConfig[];
 }
 
-export interface DBBackupDetail {
+export interface DBBackupConfig {
   type: DBType;
   name: string;
   host: string;
@@ -66,8 +66,8 @@ export interface DBDumpRunner {
 }
 
 export interface DBDumpRunnerExecuteOptions {
-  dbBackupDetail: DBBackupDetail;
-  fullStoragePath: string;
+  dbBackupConfig: DBBackupConfig;
+  folderPath: string;
   baseFileName: string;
 }
 
@@ -85,7 +85,7 @@ export interface ZipFileDetail {
 
 export interface DBZipperExecuteOptions {
   dbFileDetail: DBFileDetail;
-  fullStoragePath: string;
+  folderPath: string;
   baseFileName: string;
 }
 

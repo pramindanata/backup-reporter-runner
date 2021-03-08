@@ -9,9 +9,9 @@ import JSZip from 'jszip';
 @injectable()
 export class DBZipper {
   zip(options: DBZipperExecuteOptions): Promise<ZipFileDetail> {
-    const { dbFileDetail, fullStoragePath, baseFileName } = options;
+    const { dbFileDetail, folderPath, baseFileName } = options;
     const zipFileName = `${baseFileName}.zip`;
-    const zipFilePath = path.join(fullStoragePath, zipFileName);
+    const zipFilePath = path.join(folderPath, zipFileName);
     const writableZipFileStream = createWriteStream(zipFilePath);
 
     return new Promise((resolve, reject) => {

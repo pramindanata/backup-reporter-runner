@@ -12,25 +12,25 @@ import { getFileSize } from '@/core/util';
 @injectable()
 export class PGDumpRunner implements DBDumpRunner {
   dump(options: DBDumpRunnerExecuteOptions): Promise<DBFileDetail> {
-    const { baseFileName, dbBackupDetail, fullStoragePath } = options;
+    const { baseFileName, dbBackupConfig, folderPath } = options;
     const dbFileName = `${baseFileName}.sql`;
-    const dbFilePath = path.join(fullStoragePath, dbFileName);
+    const dbFilePath = path.join(folderPath, dbFileName);
     const writableDBFileStream = createWriteStream(dbFilePath);
     const dbDumpProccess = spawn(
       'pg_dump',
       [
         '-h',
-        dbBackupDetail.host,
+        dbBackupConfig.host,
         '-U',
-        dbBackupDetail.user,
+        dbBackupConfig.user,
         '-p',
-        dbBackupDetail.port.toString(),
+        dbBackupConfig.port.toString(),
         '-w',
-        dbBackupDetail.name,
+        dbBackupConfig.name,
       ],
       {
         env: {
-          PGPASSWORD: dbBackupDetail.password,
+          PGPASSWORD: dbBackupConfig.password,
         },
       },
     );
