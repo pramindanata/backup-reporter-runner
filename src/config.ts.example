@@ -7,8 +7,11 @@ const { env } = process;
 export const config: Config = {
   app: {
     compressionLevel: 5,
-    enableReport: env.APP_ENABLE_REPORT_DELIVERY === 'true' || false,
+    enableReportDelivery: env.APP_ENABLE_REPORT_DELIVERY === 'true' || false,
     storagePath: path.join(__dirname, '../storage'),
+  },
+  report: {
+    authToken: env.REPORT_AUTH_TOKEN || '',
   },
   bot: {
     url: env.BOT_URL || 'http://localhost:4000',

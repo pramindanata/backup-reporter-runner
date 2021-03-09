@@ -6,6 +6,9 @@ export interface Config {
     enableReportDelivery: boolean;
     storagePath: string;
   };
+  report: {
+    authToken: string;
+  };
   bot: {
     url: string;
   };
