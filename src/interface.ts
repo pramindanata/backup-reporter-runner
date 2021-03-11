@@ -44,12 +44,10 @@ export interface SuccessReport {
   ip: string;
   startedAt: Date;
   finishedAt: Date;
-  detail: {
-    name: string;
-    type: DBType;
-    filePath: string;
-    fileSize: number;
-  };
+  dbName: string;
+  dbType: DBType;
+  filePath: string;
+  fileSize: number;
 }
 
 export interface FailedReport {
@@ -57,11 +55,9 @@ export interface FailedReport {
   projectName: string;
   ip: string;
   startedAt: Date;
-  detail: {
-    name: string;
-    type: DBType;
-    message: string;
-  };
+  dbName: string;
+  dbType: DBType;
+  message: string;
 }
 
 export interface DBDumpRunner {

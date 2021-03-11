@@ -66,15 +66,13 @@ export class BackupRunnerJobFactory {
         ip: serverDetail.ip,
         startedAt: startedAt,
         finishedAt: finishedAt,
-        detail: {
-          name: dbBackupConfig.name,
-          type: dbBackupConfig.type,
-          filePath: zipFileDetail.filePath,
-          fileSize: zipFileDetail.fileSize,
-        },
+        dbName: dbBackupConfig.name,
+        dbType: dbBackupConfig.type,
+        filePath: zipFileDetail.filePath,
+        fileSize: zipFileDetail.fileSize,
       });
-    } catch (error) {
-      if (!error.isAxiosError) {
+    } catch (err) {
+      if (!err.isAxiosError) {
         await this.removeCreatedFilesAfterFailed(baseFileName, folderPath);
       }
 
@@ -83,14 +81,12 @@ export class BackupRunnerJobFactory {
         projectName: dbBackupDetail.getProjectName(),
         ip: serverDetail.ip,
         startedAt: startedAt,
-        detail: {
-          message: error.message,
-          name: dbBackupConfig.name,
-          type: dbBackupConfig.type,
-        },
+        dbName: dbBackupConfig.name,
+        dbType: dbBackupConfig.type,
+        message: err.message,
       });
 
-      onJobError(error);
+      onJobError(err);
     }
   }
 
