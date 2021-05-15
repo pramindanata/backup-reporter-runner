@@ -13,7 +13,7 @@ export class BackupFolderHelper implements BackupFolderHelperContract {
     const backupFolderPath = path.join(
       storagePath,
       database.getProject().name,
-      `${database.getShortDbName()}`,
+      `${database.getShortDbName()}_${database.name}`,
     );
 
     return backupFolderPath;

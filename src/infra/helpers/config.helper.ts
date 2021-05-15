@@ -1,9 +1,9 @@
 import { inject, singleton } from 'tsyringe';
-import { ConfigHelperContract } from '@/contract';
+import { ConfigHelperContract, ConfigKey } from '@/contract';
 import { Token } from '@/common';
 
 @singleton()
-export class ConfigHelper implements ConfigHelperContract {
+export class ConfigHelper implements ConfigHelperContract<ConfigKey> {
   private cache = {} as Record<string, any>;
 
   constructor(
@@ -11,7 +11,7 @@ export class ConfigHelper implements ConfigHelperContract {
     private config: Record<string, any>,
   ) {}
 
-  get(key: string): any {
+  get<K extends keyof ConfigKey>(key: K): ConfigKey[K] {
     if (this.cache[key]) {
       return this.cache[key];
     }

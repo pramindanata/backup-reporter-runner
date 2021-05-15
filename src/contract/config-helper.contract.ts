@@ -1,4 +1,4 @@
-import { Project } from '@/domain';
+import { Config } from '@/common';
 
 export interface ConfigHelperContract<
   KeyDict extends Record<string, any> = ConfigKey
@@ -6,12 +6,12 @@ export interface ConfigHelperContract<
   get<K extends keyof KeyDict>(key: K): KeyDict[K];
 }
 
-interface ConfigKey {
+export interface ConfigKey {
   'app.compressionLevel': number;
   'app.storagePath': string;
   'report.authToken': string;
   'report.reportDeliveryEnabled': boolean;
   'report.serviceUrl': string;
-  projects: Project[];
+  projects: Config['projects'];
   'fail.ss': string;
 }

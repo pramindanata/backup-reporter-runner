@@ -1,3 +1,4 @@
+import { EmptyEntityPropertyException } from '@/common';
 import { Database, DatabaseProps } from './database';
 
 export class Project {
@@ -10,6 +11,14 @@ export class Project {
     if (props.databases) {
       this.databases = props.databases.map((dbProps) => new Database(dbProps));
     }
+  }
+
+  getDatabases(): Database[] {
+    if (!this.databases) {
+      throw new EmptyEntityPropertyException('databases');
+    }
+
+    return this.databases;
   }
 }
 

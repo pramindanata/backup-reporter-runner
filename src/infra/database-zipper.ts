@@ -1,4 +1,4 @@
-import { inject, injectable } from 'tsyringe';
+import { injectable } from 'tsyringe';
 import JSZip from 'jszip';
 import path from 'path';
 import { createWriteStream, createReadStream } from 'fs';

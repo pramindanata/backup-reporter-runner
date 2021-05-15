@@ -5,4 +5,6 @@ import moduleAlias from 'module-alias';
 dotenv.config();
 moduleAlias.addAlias('@', __dirname);
 
-console.log('[X] Runner ready');
+import { bootstrap } from '@/infra';
+
+bootstrap();

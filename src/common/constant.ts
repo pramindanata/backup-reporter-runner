@@ -6,3 +6,9 @@ export enum Token {
   DatabaseDumper = 'DatabaseDumper',
   DatabaseZipper = 'DatabaseZipper',
 }
+
+export enum DatabaseType {
+  PgSql = 'PgSql',
+  MySql = 'MySql',
+  MongoDb = 'MongoDb',
+}

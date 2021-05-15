@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { unlink } from 'fs/promises';
+import { access, mkdir, unlink } from 'fs/promises';
 import { DumpedFileDetail, Token, ZippedFileDetail } from '@/common';
 import {
   BackupFileHelperContract,
@@ -30,6 +30,8 @@ export class BackupUseCase {
     const backupFileBaseName = this.backupFileHelper.createBaseName(startedAt);
     const backupFolderPath = this.backupFolderHelper.createPath(database);
 
+    await this.checkAndCreateBackupFolder(backupFolderPath);
+
     const dumpedFileDetail = await this.dbDumper.dump({
       database,
       dumpFolderPath: backupFolderPath,
@@ -52,6 +54,16 @@ export class BackupUseCase {
       startedAt,
       finishedAt,
     };
+  }
+
+  private async checkAndCreateBackupFolder(folderPath: string): Promise<void> {
+    try {
+      await access(folderPath);
+    } catch (err) {
+      await mkdir(folderPath, {
+        recursive: true,
+      });
+    }
   }
 }
 

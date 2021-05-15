@@ -1,19 +1,16 @@
-import { EmptyEntityPropertyException } from '@/common';
-import {
-  DatabaseBackupDetail,
-  DatabaseBackupDetailProps,
-} from './database-backup-detail';
+import { DatabaseType, EmptyEntityPropertyException } from '@/common';
 import { Project, ProjectProps } from './project';
 
 export class Database {
-  type: DbType;
+  type: DatabaseType;
   name: string;
   host: string;
   port: number;
   user: string;
   password: string;
+  backupSchedule: string;
+  daysUntilFileExpired: number;
   project?: Project;
-  backupDetail?: DatabaseBackupDetail;
 
   constructor(props: DatabaseProps) {
     this.type = props.type;
@@ -22,20 +19,18 @@ export class Database {
     this.port = props.port;
     this.user = props.user;
     this.password = props.password;
+    this.backupSchedule = props.backupSchedule;
+    this.daysUntilFileExpired = props.daysUntilFileExpired;
 
     if (props.project) {
       this.project = new Project(props.project);
     }
-
-    if (props.backupDetail) {
-      this.backupDetail = new DatabaseBackupDetail(props.backupDetail);
-    }
   }
 
   getShortDbName(): string {
-    if (this.type === DbType.MONGODB) {
+    if (this.type === DatabaseType.MongoDb) {
       return 'mongodb';
-    } else if (this.type === DbType.MYSQL) {
+    } else if (this.type === DatabaseType.MySql) {
       return 'mysql';
     }
 
@@ -49,29 +44,16 @@ export class Database {
 
     return this.project;
   }
-
-  getBackupDetail(): DatabaseBackupDetail {
-    if (!this.backupDetail) {
-      throw new EmptyEntityPropertyException('backupDetail');
-    }
-
-    return this.backupDetail;
-  }
 }
 
 export interface DatabaseProps {
-  type: DbType;
+  type: DatabaseType;
   name: string;
   host: string;
   port: number;
   user: string;
   password: string;
+  backupSchedule: string;
+  daysUntilFileExpired: number;
   project?: ProjectProps;
-  backupDetail?: DatabaseBackupDetailProps;
-}
-
-export enum DbType {
-  POSTGRESQL = 'PostgreSQL',
-  MYSQL = 'MySQL',
-  MONGODB = 'MongoDB',
 }
