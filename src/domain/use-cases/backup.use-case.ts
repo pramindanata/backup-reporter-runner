@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { unlink } from 'fs/promises';
 import { DumpedFileDetail, ZippedFileDetail } from '@/common';
 import {
@@ -8,6 +9,7 @@ import {
 } from '@/contract';
 import { Database } from '../entities';
 
+@injectable()
 export class BackupUseCase {
   constructor(
     private dbDumper: DatabaseDumperContract,
@@ -18,7 +20,7 @@ export class BackupUseCase {
 
   async execute(database: Database): Promise<BackupResult> {
     const startedAt = new Date();
-    const backupFileBaseName = this.backupFileHelper.createBaseName();
+    const backupFileBaseName = this.backupFileHelper.createBaseName(startedAt);
     const backupFolderPath = this.backupFolderHelper.createPath(database);
 
     const dumpedFileDetail = await this.dbDumper.dump({

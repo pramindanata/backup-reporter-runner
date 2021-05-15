@@ -8,7 +8,7 @@ export class Project {
     this.name = props.name;
 
     if (props.databases) {
-      this.databases = props.databases;
+      this.databases = props.databases.map((dbProps) => new Database(dbProps));
     }
   }
 }

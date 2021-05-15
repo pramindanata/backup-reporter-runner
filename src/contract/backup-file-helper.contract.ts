@@ -1,3 +1,4 @@
 export interface BackupFileHelperContract {
-  createBaseName(): string;
+  createBaseName(currentDate: Date): string;
+  getSize(path: string): Promise<number>;
 }
