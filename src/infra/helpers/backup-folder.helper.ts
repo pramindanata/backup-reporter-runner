@@ -1,15 +1,12 @@
-import { inject, singleton } from 'tsyringe';
+import { singleton } from 'tsyringe';
 import path from 'path';
-import { BackupFolderHelperContract, ConfigHelperContract } from '@/contract';
+import { BackupFolderHelperContract } from '@/contract';
 import { Database } from '@/domain';
-import { Token } from '@/common';
+import { ConfigHelper } from './config.helper';
 
 @singleton()
 export class BackupFolderHelper implements BackupFolderHelperContract {
-  constructor(
-    @inject(Token.ConfigHelper)
-    private configHelper: ConfigHelperContract,
-  ) {}
+  constructor(private configHelper: ConfigHelper) {}
 
   createPath(database: Database): string {
     const storagePath = this.configHelper.get('app.storagePath');

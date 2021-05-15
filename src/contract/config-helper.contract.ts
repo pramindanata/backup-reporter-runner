@@ -13,4 +13,5 @@ interface ConfigKey {
   'report.reportDeliveryEnabled': boolean;
   'report.serviceUrl': string;
   projects: Project[];
+  'fail.ss': string;
 }

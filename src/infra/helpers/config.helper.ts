@@ -18,13 +18,13 @@ export class ConfigHelper implements ConfigHelperContract {
 
     const keyParts = (key as string).split('.');
     const exploredPart: string[] = [];
-    let crawled: string | Record<string, any> = this.config;
+    let narrowedConfig: NarrowedConfig = this.config;
 
     keyParts.forEach((part) => {
       exploredPart.push(part);
 
-      if (typeof crawled === 'object') {
-        crawled = crawled[part];
+      if (this.shouldTraverseDeep(narrowedConfig)) {
+        narrowedConfig = narrowedConfig[part];
       } else {
         const failPath = exploredPart.join('.');
 
@@ -32,17 +32,17 @@ export class ConfigHelper implements ConfigHelperContract {
       }
     });
 
-    if (typeof crawled !== 'object') {
-      this.cache[key] = crawled;
+    this.cache[key] = narrowedConfig;
 
-      return crawled;
-    } else {
-      const failPath = exploredPart.join('.');
+    return narrowedConfig;
+  }
 
-      throw new InvalidConfigKeyException(failPath);
-    }
+  private shouldTraverseDeep(narrowedConfig: NarrowedConfig): boolean {
+    return typeof narrowedConfig === 'object';
   }
 }
+
+type NarrowedConfig = any | Record<string, any>;
 
 class InvalidConfigKeyException extends Error {
   constructor(failPath: string) {

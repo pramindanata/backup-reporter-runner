@@ -2,22 +2,15 @@ import { inject, injectable } from 'tsyringe';
 import JSZip from 'jszip';
 import path from 'path';
 import { createWriteStream, createReadStream } from 'fs';
-import {
-  BackupFileHelperContract,
-  DatabaseZipperContract,
-  DatabaseZipperZipOptions,
-  ConfigHelperContract,
-} from '@/contract';
-import { Token, ZippedFileDetail } from '@/common';
+import { DatabaseZipperContract, DatabaseZipperZipOptions } from '@/contract';
+import { ZippedFileDetail } from '@/common';
+import { BackupFileHelper, ConfigHelper } from './helpers';
 
 @injectable()
 export class DatabaseZipper implements DatabaseZipperContract {
   constructor(
-    @inject(Token.BackupFileHelper)
-    private backupFileHelper: BackupFileHelperContract,
-
-    @inject(Token.ConfigHelper)
-    private configHelper: ConfigHelperContract,
+    private backupFileHelper: BackupFileHelper,
+    private configHelper: ConfigHelper,
   ) {}
 
   zip(options: DatabaseZipperZipOptions): Promise<ZippedFileDetail> {

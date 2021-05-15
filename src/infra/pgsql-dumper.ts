@@ -1,21 +1,15 @@
-import { inject, injectable } from 'tsyringe';
+import { injectable } from 'tsyringe';
 import path from 'path';
 import { createWriteStream } from 'fs';
 import { spawn } from 'child_process';
-import { DumpedFileDetail, Token } from '@/common';
-import {
-  BackupFileHelperContract,
-  DatabaseDumperContract,
-  DatabaseDumperDumpOptions,
-} from '@/contract';
+import { DumpedFileDetail } from '@/common';
+import { DatabaseDumperContract, DatabaseDumperDumpOptions } from '@/contract';
 import { DumpEmptyReadStreamException } from './exceptions';
+import { BackupFileHelper } from './helpers';
 
 @injectable()
 export class PgSqlDumper implements DatabaseDumperContract {
-  constructor(
-    @inject(Token.BackupFileHelper)
-    private backupFileHelper: BackupFileHelperContract,
-  ) {}
+  constructor(private backupFileHelper: BackupFileHelper) {}
 
   dump(options: DatabaseDumperDumpOptions): Promise<DumpedFileDetail> {
     const { baseFileName, database, dumpFolderPath } = options;
