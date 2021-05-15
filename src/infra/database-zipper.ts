@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 import JSZip from 'jszip';
 import path from 'path';
 import { createWriteStream, createReadStream } from 'fs';
@@ -8,12 +8,15 @@ import {
   DatabaseZipperZipOptions,
   ConfigHelperContract,
 } from '@/contract';
-import { ZippedFileDetail } from '@/common';
+import { Token, ZippedFileDetail } from '@/common';
 
 @injectable()
 export class DatabaseZipper implements DatabaseZipperContract {
   constructor(
+    @inject(Token.BackupFileHelper)
     private backupFileHelper: BackupFileHelperContract,
+
+    @inject(Token.ConfigHelper)
     private configHelper: ConfigHelperContract,
   ) {}
 

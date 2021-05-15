@@ -1,6 +1,6 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 import { unlink } from 'fs/promises';
-import { DumpedFileDetail, ZippedFileDetail } from '@/common';
+import { DumpedFileDetail, Token, ZippedFileDetail } from '@/common';
 import {
   BackupFileHelperContract,
   BackupFolderHelperContract,
@@ -12,9 +12,16 @@ import { Database } from '../entities';
 @injectable()
 export class BackupUseCase {
   constructor(
+    @inject(Token.DatabaseDumper)
     private dbDumper: DatabaseDumperContract,
+
+    @inject(Token.DatabaseZipper)
     private dbZipper: DatabaseZipperContract,
+
+    @inject(Token.BackupFolderHelper)
     private backupFolderHelper: BackupFolderHelperContract,
+
+    @inject(Token.BackupFileHelper)
     private backupFileHelper: BackupFileHelperContract,
   ) {}
 
